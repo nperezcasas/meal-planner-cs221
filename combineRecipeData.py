@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 from datasets import load_dataset
+from fuzzywuzzy import process
 
 # Load ingredient prices
 prices_df = pd.read_csv('ingredients_with_price.csv', delimiter=r'\s{2,}', engine='python')
@@ -21,18 +22,22 @@ def clean_ingredient_name(name):
     name = name.split(',')[0]              # Remove anything after comma
     return name.strip().lower()
 
-def get_cost_for_ingredient(ingredient_name, prices_df):
+def get_cost_for_ingredient(ingredient_name, prices_df, threshold=60):  # Lowered threshold
     # Try exact match first
     match = prices_df[prices_df['Ingredient'] == ingredient_name]
     if not match.empty:
         return match['Price'].iloc[0]
     
-    # Try partial match
-    for _, row in prices_df.iterrows():
-        if row['Ingredient'] in ingredient_name or ingredient_name in row['Ingredient']:
-            return row['Price']
+    # Try fuzzy match if exact match fails
+    ingredients_list = prices_df['Ingredient'].tolist()
+    best_match, score = process.extractOne(ingredient_name, ingredients_list)
+    
+    if score >= threshold:  # Allow more lenient matches
+        match = prices_df[prices_df['Ingredient'] == best_match]
+        return match['Price'].iloc[0]
     
     return None
+
 
 def process_recipe(row):
     try:

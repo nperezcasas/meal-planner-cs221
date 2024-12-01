@@ -1,39 +1,22 @@
-- buttermilk: 1
-- yellow cornmeal: 2
-- all-purpose flour: 3
-- salt: 5
-- potatoes: 2
-- pepper: 2
-- shortening: 1
-- nutmeg: 1
-- eggs: 1
-- baby green peas: 1
-- onion: 3
-- margarine: 2
-- flour: 1
-- baking powder: 1
-- egg: 3
-- milk: 2
-- butter: 3
-- mushroom: 1
-- cornstarch: 1
-- water: 1
-- sour cream: 1
-- dill weed: 1
-- paprika: 1
-- sweetened condensed milk: 1
-- lemon juice: 2
-- yogurt: 1
-- cucumber: 1
-- garlic: 2
-- sugar: 1
-- vanilla ice cream: 1
-- frozen yogurt: 1
-- heavy cream: 1
-- cinnamon: 1
-- cocoa powder: 1
-- chicken breasts: 1
-- peppercorns: 1
-- olive oil: 1
-- corn tortillas: 1
-- monterey jack cheese: 1
+- salt: 1
+- all-purpose flour: 1
+- egg: 2
+- english muffins: 1
+- tomatoes: 1
+- celery: 1
+- lemon juice: 1
+- mayonnaise: 1
+- swiss cheese: 1
+- chicken: 1
+- garlic: 1
+- onion: 1
+- ginger: 1
+- rice: 1
+- water: 2
+- fish sauce: 1
+- green onions: 1
+- sweet potatoes: 1
+- butter: 1
+- marshmallows: 1
+- evaporated milk: 1
+- dark muscovado sugar: 1
