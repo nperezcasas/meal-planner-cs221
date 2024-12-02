@@ -3,30 +3,29 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
 import pandas as pd
 
-def create_recipe_features(recipe):
+def create_recipe_features(recipe, ingredient_list):
     """Extract relevant features from a recipe"""
-    return np.array([
-        recipe['health_score'],
-        recipe['Estimated_Cost'],
-        recipe['TotalTime_minutes'] if not pd.isna(recipe['TotalTime_minutes']) else 0,
-        recipe['AggregatedRating'],
-        recipe['Calories_per_serving'],
-        recipe['Protein_per_serving'],
-        recipe['Fat_per_serving'],
-        recipe['Carbs_per_serving']
-    ])
+    ingredient_vector = np.array([1 if ingredient in recipe['Ingredients'] else 0 for ingredient in ingredient_list])
+    return np.concatenate((
+        ingredient_vector,
+        np.array([
+            recipe['health_score'],
+            recipe['TotalTime_minutes'] if not pd.isna(recipe['TotalTime_minutes']) else 0
+        ])
+    ))
 
 class PreferenceLearner:
-    def __init__(self):
+    def __init__(self, ingredient_list):
         self.scaler = StandardScaler()
         self.positive_examples = []
         self.negative_examples = []
         self.model = NearestNeighbors(algorithm='ball_tree')
         self.min_examples = 3  # Minimum examples needed for training
+        self.ingredient_list = ingredient_list
         
     def add_feedback(self, recipe, liked=True):
         """Add a recipe to the learning set"""
-        features = create_recipe_features(recipe)
+        features = create_recipe_features(recipe, self.ingredient_list)
         if liked:
             self.positive_examples.append(features)
         else:
@@ -60,7 +59,7 @@ class PreferenceLearner:
         if len(self.positive_examples) < self.min_examples:
             return 0.5  # Default score when insufficient training data
             
-        features = create_recipe_features(recipe)
+        features = create_recipe_features(recipe, self.ingredient_list)
         features_scaled = self.scaler.transform(features.reshape(1, -1))
         
         # Get distance to nearest positive examples

@@ -26,27 +26,7 @@ def get_user_preferences(recipes_df):
         'servings_needed': int(input("How many people are you cooking for? ")),
     }
     
-    # Show available keywords
-    print("\nAvailable recipe categories and keywords:")
-    unique_keywords = set()
-    for keywords in recipes_df['Keywords'].dropna():
-        unique_keywords.update([k.strip() for k in keywords.split(',')])
-    print(", ".join(sorted(unique_keywords)))
-    
-    # Get keyword preferences
-    preferences['keywords'] = input("\nEnter desired keywords (comma-separated, press Enter for none): ").lower().split(',')
-    preferences['keywords'] = [k.strip() for k in preferences['keywords'] if k.strip()]
-    
     return preferences
-
-def filter_by_keywords(df, keywords):
-    if not keywords:
-        return df
-    
-    mask = df['Keywords'].str.lower().fillna('').apply(
-        lambda x: any(keyword in x for keyword in keywords)
-    )
-    return df[mask]
 
 def compile_shopping_list(selected_recipes):
     shopping_list = defaultdict(float)
@@ -137,9 +117,7 @@ def collect_initial_feedback(recipes_df, preference_learner):
     print("Please rate these sample recipes to help us learn your preferences (1-5, or 0 to skip):")
     
     # Sample diverse recipes for initial feedback
-    sample_recipes = recipes_df.groupby('Keywords', group_keys=False).apply(
-    lambda x: x.sample(min(len(x), 2))  # Adjust based on dataset size
-    ).sample(10)  # Total sample size
+    sample_recipes = recipes_df.sample(min(10, len(recipes_df)))  # Increase sample size to 10
     
     for _, recipe in sample_recipes.iterrows():
         print(f"\n{recipe['Name']}")
@@ -167,25 +145,14 @@ def select_initial_recipes(filtered_df, prefs, preference_learner):
         )
         # Combine with original scoring
         filtered_df['final_score'] = (
-            filtered_df['combined_score'] * 0.4 + 
-            filtered_df['preference_score'] * 0.6 + 
-            np.random.uniform(0, 0.05, size=len(filtered_df))
+            filtered_df['combined_score'] * 0.3 + 
+            filtered_df['preference_score'] * 0.7
         )
-        
-        filtered_df['final_score'] += np.random.uniform(0, 0.05, size=len(filtered_df))
-
         filtered_df = filtered_df.sort_values('final_score', ascending=False)
     else:
         # Fall back to original scoring
         filtered_df = filtered_df.sort_values('combined_score', ascending=False)
     
-    # Penalize recipes that were recommended frequently
-    if 'recommendation_count' in filtered_df.columns:
-        filtered_df['diversity_penalty'] = 1 / (1 + filtered_df['recommendation_count'])
-        filtered_df['final_score'] *= filtered_df['diversity_penalty']
-
-    filtered_df = filtered_df.sort_values('final_score', ascending=False)
-
     # Select recipes within budget
     selected_recipes = []
     total_cost = 0
@@ -207,6 +174,72 @@ def display_recipe(recipe, servings):
     print(f"Time: {recipe['TotalTime_minutes']:.0f} minutes")
     print(f"Rating: {recipe['AggregatedRating']:.1f}")
 
+def calculate_cost_efficiency(total_cost, user_budget):
+    """
+    Calculate the cost efficiency of the meal plan.
+    
+    Parameters:
+    - total_cost (float): The total cost of the meal plan.
+    - user_budget (float): The user's budget.
+    
+    Returns:
+    - float: The cost efficiency as a percentage.
+    """
+    return (total_cost / user_budget) * 100
+
+def calculate_nutritional_balance(actual_intake, recommended_intake):
+    """
+    Calculate the nutritional balance for a nutrient.
+    
+    Parameters:
+    - actual_intake (float): The actual intake of the nutrient.
+    - recommended_intake (float): The recommended intake of the nutrient.
+    
+    Returns:
+    - float: The nutritional balance as a percentage.
+    """
+    return (actual_intake / recommended_intake) * 100
+
+def calculate_overall_nutritional_balance(nutrient_intakes, recommended_intakes):
+    """
+    Calculate the overall nutritional balance for all nutrients.
+    
+    Parameters:
+    - nutrient_intakes (dict): A dictionary of actual intakes for each nutrient.
+    - recommended_intakes (dict): A dictionary of recommended intakes for each nutrient.
+    
+    Returns:
+    - float: The overall nutritional balance as a percentage.
+    """
+    scores = []
+    for nutrient, actual_intake in nutrient_intakes.items():
+        recommended_intake = recommended_intakes.get(nutrient, 1)  # Avoid division by zero
+        scores.append(calculate_nutritional_balance(actual_intake, recommended_intake))
+    return sum(scores) / len(scores)
+
+def calculate_recipe_variety(unique_ingredients, total_ingredients):
+    """
+    Calculate the recipe variety of the meal plan.
+    
+    Parameters:
+    - unique_ingredients (int): The number of unique ingredients in the meal plan.
+    - total_ingredients (int): The total number of ingredients in the meal plan.
+    
+    Returns:
+    - float: The recipe variety as a percentage.
+    """
+    return (unique_ingredients / total_ingredients) * 100
+
+def save_results_to_eval_file(results, source):
+    results['source'] = source
+    results['timestamp'] = pd.to_datetime('now')  # Add timestamp for tracking
+    try:
+        eval_results = pd.read_csv('eval_results.csv')
+        eval_results = pd.concat([eval_results, results], ignore_index=True)
+    except FileNotFoundError:
+        eval_results = results
+    eval_results.to_csv('eval_results.csv', index=False)
+
 def main():
     # Load and prepare datasets
     print("Loading datasets...")
@@ -218,8 +251,14 @@ def main():
     recipes_df = pd.merge(recipes_df, recipes_with_costs[['RecipeId', 'Estimated_Cost', 'Ingredients']], 
                          left_on='RecipeId', right_on='RecipeId', how='inner')
 
-    # Initialize preference learner
-    preference_learner = PreferenceLearner()
+    # Extract unique ingredients from the dataset
+    all_ingredients = set()
+    for ingredients in recipes_df['Ingredients']:
+        all_ingredients.update(eval(ingredients))
+    ingredient_list = sorted(all_ingredients)
+
+    # Initialize preference learner with the ingredient list
+    preference_learner = PreferenceLearner(ingredient_list)
     
     # Add per-serving calculations BEFORE collecting feedback
     print("Processing recipes...")
@@ -299,9 +338,6 @@ def main():
             (filtered_df['TotalTime_minutes'] <= prefs['max_time'])
         ]
 
-    # Apply keyword filtering
-    filtered_df = filter_by_keywords(filtered_df, prefs['keywords'])
-
     # Select initial recipes using learned preferences
     selected_recipes_df = select_initial_recipes(filtered_df, prefs, preference_learner)
 
@@ -344,15 +380,35 @@ def main():
     for item, count in shopping_list.items():
         print(f"- {item}: {count:.0f}")
 
-    # Save selected recipes to CSV
-    selected_recipes_df.to_csv('weekly_meal_plan.csv', index=False)
-    print("\nWeekly meal plan saved to 'weekly_meal_plan.csv'")
+    # Calculate evaluation metrics
+    cost_efficiency = calculate_cost_efficiency(total_cost, prefs['budget'])
+    nutrient_intakes = {
+        'protein': total_calories * 0.15 / 4,  # Example calculation for protein intake
+        'carbs': total_calories * 0.55 / 4,    # Example calculation for carbs intake
+        'fat': total_calories * 0.30 / 9       # Example calculation for fat intake
+    }
+    recommended_intakes = {
+        'protein': 50.0,
+        'carbs': 300.0,
+        'fat': 70.0
+    }
+    nutritional_balance = calculate_overall_nutritional_balance(nutrient_intakes, recommended_intakes)
+    recipe_variety = calculate_recipe_variety(len(shopping_list), sum(shopping_list.values()))
 
-    # Save shopping list to text file
-    with open('shopping_list.txt', 'w') as f:
-        for item, count in shopping_list.items():
-            f.write(f"- {item}: {count:.0f}\n")
-    print("Shopping list saved to 'shopping_list.txt'")
+    print(f"\nCost Efficiency: {cost_efficiency:.2f}%")
+    print(f"Nutritional Balance: {nutritional_balance:.2f}%")
+    print(f"Recipe Variety: {recipe_variety:.2f}%")
+
+    # Save baseline results to the evaluation file
+    baseline_results = pd.DataFrame({
+        'Total Cost': [total_cost],
+        'Total Calories': [selected_recipes_df['Calories'].sum()],
+        'Total Protein (g)': [selected_recipes_df['ProteinContent'].sum()],
+        'Cost Efficiency (%)': [cost_efficiency],
+        'Nutritional Balance (%)': [nutritional_balance],
+        'Recipe Variety (%)': [recipe_variety],
+    })
+    save_results_to_eval_file(baseline_results, source='meal_planner')
 
 if __name__ == "__main__":
     main()
