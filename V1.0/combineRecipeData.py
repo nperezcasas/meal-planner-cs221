@@ -3,9 +3,9 @@ import ast
 import re
 
 # Load all datasets
-nutrition_df = pd.read_csv('100_ingredient_nutrition.csv', index_col=0)
-costs_df = pd.read_csv('100_ingredient_costs.csv')
-recipes_df = pd.read_csv('100_recipes_dataset.csv')
+nutrition_df = pd.read_csv('files/100_ingredient_nutrition.csv', index_col=0)
+costs_df = pd.read_csv('files/100_ingredient_costs.csv')
+recipes_df = pd.read_csv('files/100_recipes_dataset.csv')
 
 def clean_ingredient_name(name):
     # Remove quantities and units
@@ -90,7 +90,7 @@ def process_recipe(row):
 result_df = recipes_df.apply(process_recipe, axis=1)
 
 # Save to CSV
-result_df.to_csv('100_combined_recipe_data.csv', index=False)
+result_df.to_csv('files/100_combined_recipe_data.csv', index=False)
 
 # Display first few results
 print(result_df.head())

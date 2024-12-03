@@ -234,16 +234,16 @@ def save_results_to_eval_file(results, source):
     results['source'] = source
     results['timestamp'] = pd.to_datetime('now')  # Add timestamp for tracking
     try:
-        eval_results = pd.read_csv('eval_results.csv')
+        eval_results = pd.read_csv('files/eval_results.csv')
         eval_results = pd.concat([eval_results, results], ignore_index=True)
     except FileNotFoundError:
         eval_results = results
-    eval_results.to_csv('eval_results.csv', index=False)
+    eval_results.to_csv('files/eval_results.csv', index=False)
 
 def main():
     # Load and prepare datasets
     print("Loading datasets...")
-    recipes_with_costs = pd.read_csv('combined_recipe_data.csv')
+    recipes_with_costs = pd.read_csv('files/combined_recipe_data.csv')
     ds = load_dataset("AkashPS11/recipes_data_food.com")
     recipes_df = ds['train'].to_pandas()
 
@@ -375,10 +375,17 @@ def main():
     print(f"Average Rating: {total_rating/len(selected_recipes_df):.1f}")
     print(f"Average Time: {total_time/len(selected_recipes_df):.0f} minutes")
     print(f"Average Calories per Serving: {total_calories/len(selected_recipes_df):.0f}")
-
     print("\n=== Shopping List ===")
     for item, count in shopping_list.items():
         print(f"- {item}: {count:.0f}")
+
+    # Save weekly meal plan
+    selected_recipes_df.to_csv('files/weekly_meal_plan.csv', index=False)
+
+    # Save shopping list to a file
+    with open('files/shopping_list.txt', 'w') as f:
+        for ingredient, quantity in shopping_list.items():
+            f.write(f"{ingredient}: {quantity}\n")
 
     # Calculate evaluation metrics
     cost_efficiency = calculate_cost_efficiency(total_cost, prefs['budget'])

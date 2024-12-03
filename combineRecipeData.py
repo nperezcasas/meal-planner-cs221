@@ -4,7 +4,7 @@ from datasets import load_dataset
 from fuzzywuzzy import process
 
 # Load ingredient prices
-prices_df = pd.read_csv('ingredients_with_price.csv', delimiter=r'\s{2,}', engine='python')
+prices_df = pd.read_csv('files/ingredients_with_price.csv', delimiter=r'\s{2,}', engine='python')
 
 # Clean up price column - extract numeric value and convert to float
 prices_df['Price'] = prices_df['Cost per Unit ($)'].str.extract(r'(\d+\.\d+|\d+)').astype(float)
@@ -100,7 +100,7 @@ result_df = result_df.dropna()  # Remove recipes where processing failed
 
 # Save to CSV
 print(f"Saving {len(result_df)} valid recipes...")
-result_df.to_csv('combined_recipe_data.csv', index=False)
+result_df.to_csv('files/combined_recipe_data.csv', index=False)
 
 # Display some statistics
 print(f"\nTotal recipes processed: {len(recipes_df)}")

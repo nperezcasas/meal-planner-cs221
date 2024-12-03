@@ -33,7 +33,7 @@ ingredients_df = pd.DataFrame({
 })
 
 # Save to CSV
-ingredients_df.to_csv('top_5000_ingredients.csv', index=False)
+ingredients_df.to_csv('files/top_5000_ingredients.csv', index=False)
 
 # Print some statistics
 print(f"Total unique ingredients: {len(ingredient_counts)}")

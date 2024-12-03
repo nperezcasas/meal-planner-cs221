@@ -2,7 +2,7 @@ import pandas as pd
 import re
 
 # Load the CSV file with the correct separator
-data_df = pd.read_csv('100_ingredient_costs_fromChatGPT.csv', 
+data_df = pd.read_csv('files/100_ingredient_costs_fromChatGPT.csv', 
                       sep=',',
                       names=['ingredient', 'price_range'])
 
@@ -43,7 +43,7 @@ result_df = pd.DataFrame({
 })
 
 # Save the DataFrame to a CSV file
-result_df.to_csv('100_ingredient_costs.csv', index=False)
+result_df.to_csv('files/100_ingredient_costs.csv', index=False)
 
 # Display the DataFrame
 print(result_df.head())

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 # Load the cleaned dataset
-recipes_df = pd.read_csv('combined_recipe_data.csv')
+recipes_df = pd.read_csv('files/combined_recipe_data.csv')
 
 # Normalize the nutritional values per dollar
 recipes_df['protein_per_dollar'] = recipes_df['ProteinContent'] / recipes_df['Estimated_Cost']
@@ -154,11 +154,11 @@ def save_results_to_eval_file(results, source):
     results['source'] = source
     results['timestamp'] = pd.to_datetime('now')  # Add timestamp for tracking
     try:
-        eval_results = pd.read_csv('eval_results.csv')
+        eval_results = pd.read_csv('files/eval_results.csv')
         eval_results = pd.concat([eval_results, results], ignore_index=True)
     except FileNotFoundError:
         eval_results = results
-    eval_results.to_csv('eval_results.csv', index=False)
+    eval_results.to_csv('files/eval_results.csv', index=False)
 
 # Save baseline results to the evaluation file
 baseline_results = pd.DataFrame({
@@ -172,4 +172,4 @@ baseline_results = pd.DataFrame({
 save_results_to_eval_file(baseline_results, source='baseline')
 
 # Save the selected recipes to a CSV file
-selected_recipes_df.to_csv('baseline_selected_recipes.csv', index=False)
+selected_recipes_df.to_csv('files/baseline_selected_recipes.csv', index=False)

@@ -60,7 +60,7 @@ async def main(ingredients):
                 print(f"Failed to fetch data for {ingredient}")
 
 # Read the simplified ingredients list
-simplified_ingredients_df = pd.read_csv('100_simplified_ingredients_list.csv')
+simplified_ingredients_df = pd.read_csv('files/100_simplified_ingredients_list.csv')
 ingredients = simplified_ingredients_df['NER'].str.lower().str.strip().tolist()  # Preprocess ingredient names
 
 # Run the main function
@@ -75,5 +75,4 @@ print(f"\nCompleted: Processed {len(nutrition_data)} ingredients")
 # Save to CSV after ensuring the data is in a proper format
 nutrition_df = pd.DataFrame.from_dict(nutrition_data, orient='index')
 nutrition_df.fillna(0, inplace=True)  # Replace missing values with 0
-#nutrition_df.to_csv('ingredient_nutrition.csv')
-nutrition_df.to_csv('100_ingredient_nutrition.csv')
+nutrition_df.to_csv('files/100_ingredient_nutrition.csv')
